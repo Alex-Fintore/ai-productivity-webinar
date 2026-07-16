@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type CopyStatus = "idle" | "success" | "error";
+export type CopyStatus = "idle" | "pending" | "success" | "error";
 
 function fallbackCopy(value: string) {
   const activeElement = document.activeElement as HTMLElement | null;
@@ -53,6 +53,7 @@ async function copyToClipboard(value: string) {
 export function useCopyFeedback() {
   const [status, setStatus] = useState<CopyStatus>("idle");
   const timerRef = useRef<number | null>(null);
+  const pendingRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -62,13 +63,18 @@ export function useCopyFeedback() {
   );
 
   const copy = useCallback(async (value: string) => {
+    if (pendingRef.current) return;
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    pendingRef.current = true;
+    setStatus("pending");
 
     try {
       await copyToClipboard(value);
       setStatus("success");
     } catch {
       setStatus("error");
+    } finally {
+      pendingRef.current = false;
     }
 
     timerRef.current = window.setTimeout(() => setStatus("idle"), 2200);

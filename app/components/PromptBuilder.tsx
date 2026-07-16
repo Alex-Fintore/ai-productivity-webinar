@@ -22,7 +22,7 @@ function buildPrompt(
 Верни результат в трёх частях:
 1. Короткое резюме.
 2. Рабочий черновик.
-3. Список фактов, чисел и решений, которые нужно проверить человеку.`;
+3. Список фактов, чисел и решений, которые человек должен проверить.`;
 }
 
 export function PromptBuilder() {
@@ -36,13 +36,21 @@ export function PromptBuilder() {
     SCENARIOS.find((scenario) => scenario.id === promptScenario) ?? SCENARIOS[0];
   const promptText = buildPrompt(activeScenario, role, context, goal, constraints);
   const copyLabel =
-    status === "success" ? "Скопировано" : status === "error" ? "Не удалось — повторить" : "Копировать";
+    status === "pending"
+      ? "Копирую…"
+      : status === "success"
+      ? "Запрос скопирован"
+      : status === "error"
+        ? "Попробовать ещё раз"
+        : "Скопировать запрос";
 
   return (
-    <section className="prompt-section scene" data-scene>
-      <div className="section-heading light-heading">
+    <section id="prompt" className="prompt-section scene" data-scene>
+      <div className="section-heading section-heading--wide light-heading">
         <p className="section-index">05 / КОНСТРУКТОР ЗАПРОСОВ</p>
-        <h2>Хороший запрос начинается не с роли, а с ясной задачи.</h2>
+        <h2 tabIndex={-1}>
+          Опишите задачу, материал и ограничения — черновик запроса обновится автоматически.
+        </h2>
       </div>
       <div className="prompt-workbench">
         <form className="prompt-form" onSubmit={(event) => event.preventDefault()}>
@@ -65,6 +73,7 @@ export function PromptBuilder() {
               value={role}
               onChange={(event) => setRole(event.target.value)}
               placeholder="Например: руководитель отдела продаж"
+              autoComplete="organization-title"
             />
           </label>
           <label>
@@ -96,21 +105,26 @@ export function PromptBuilder() {
         </form>
         <div className="prompt-output">
           <div className="prompt-output-head">
-            <span>ГОТОВЫЙ ШАБЛОН</span>
+            <span>ЧЕРНОВИК ЗАПРОСА</span>
             <button
               type="button"
               onClick={() => void copy(promptText)}
               data-testid="copy-prompt"
+              data-copy-state={status}
+              aria-busy={status === "pending"}
+              aria-disabled={status === "pending"}
             >
               {copyLabel}
             </button>
           </div>
           <span className="sr-only" role="status" aria-live="polite">
-            {status === "success"
-              ? "Шаблон скопирован в буфер обмена."
-              : status === "error"
-                ? "Не удалось скопировать шаблон. Выделите текст вручную."
-                : ""}
+            {status === "pending"
+              ? "Копирую запрос."
+              : status === "success"
+                ? "Запрос скопирован в буфер обмена."
+                : status === "error"
+                  ? "Не удалось скопировать запрос. Попробуйте ещё раз."
+                  : ""}
           </span>
           <pre>{promptText}</pre>
           <p>

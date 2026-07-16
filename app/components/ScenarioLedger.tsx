@@ -1,7 +1,7 @@
 "use client";
 
 import { SCENARIOS } from "../lib/content";
-import { calculateSelectedHours } from "../lib/planner";
+import { calculateSelectedHours, getSelectionGuidance } from "../lib/planner";
 import { useExperience } from "./ExperienceShell";
 
 const oneDecimal = new Intl.NumberFormat("ru-RU", {
@@ -17,12 +17,13 @@ export function ScenarioLedger() {
   const { resetSelection, selected, toggleScenario } = useExperience();
   const totalHours = calculateSelectedHours(selected);
   const percentage = Math.min(100, (totalHours / 8) * 100);
+  const selectionGuidance = getSelectionGuidance(selected.length);
 
   return (
     <section id="week" className="scenario-ledger scene" data-scene data-testid="scenario-ledger">
       <div className="section-heading">
         <p className="section-index">01 / КУДА УХОДИТ ВРЕМЯ</p>
-        <h2>Соберите личный табель</h2>
+        <h2 tabIndex={-1}>Соберите личный табель</h2>
         <p>Отметьте задачи, которые повторяются у вас каждую неделю.</p>
       </div>
 
@@ -54,17 +55,17 @@ export function ScenarioLedger() {
           })}
         </ul>
 
-        <aside className="time-result" aria-live="polite" aria-atomic="true">
+        <aside className="time-result">
           <p className="artifact-kicker">ВАШ ОРИЕНТИР</p>
           <strong data-testid="hours-total">{compactNumber.format(totalHours)}</strong>
           <span>часов в неделю</span>
           <div className="time-meter" aria-hidden="true">
             <span style={{ width: `${percentage}%` }} />
           </div>
-          <p>
-            Выбрано: {selected.length}. Для двухнедельного плана оставьте два или три
-            сценария.
-          </p>
+          <p>{selectionGuidance.summary}</p>
+          <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {compactNumber.format(totalHours)} часов в неделю. {selectionGuidance.summary}
+          </span>
           <button
             className="text-button"
             type="button"

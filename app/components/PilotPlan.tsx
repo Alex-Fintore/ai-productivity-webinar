@@ -2,13 +2,14 @@
 
 import { useMemo } from "react";
 import { SCENARIOS } from "../lib/content";
-import { buildPilotPlan } from "../lib/planner";
+import { buildPilotPlan, getSelectionGuidance } from "../lib/planner";
 import { useExperience } from "./ExperienceShell";
 import { useCopyFeedback } from "./useCopyFeedback";
 
 export function PilotPlan() {
   const { selected } = useExperience();
   const { copy, status } = useCopyFeedback();
+  const selectionGuidance = getSelectionGuidance(selected.length);
   const pilotPlan = useMemo(() => {
     try {
       return buildPilotPlan(selected);
@@ -20,18 +21,20 @@ export function PilotPlan() {
     .map((entry) => `День ${entry.day}. ${entry.title}\n${entry.detail}`)
     .join("\n\n");
   const copyLabel =
-    status === "success"
+    status === "pending"
+      ? "Копирую…"
+      : status === "success"
       ? "План скопирован"
       : status === "error"
-        ? "Не удалось — повторить"
+        ? "Попробовать ещё раз"
         : "Копировать план";
 
   return (
-    <section className="pilot-section scene" data-scene data-testid="pilot-section">
+    <section id="pilot" className="pilot-section scene" data-scene data-testid="pilot-section">
       <div className="section-heading">
         <p className="section-index">06 / ПЛАН НА ДВЕ НЕДЕЛИ</p>
-        <h2>Измерьте эффект, прежде чем масштабировать привычку.</h2>
-        <p>Для рабочего плана выберите в табеле два или три сценария.</p>
+        <h2 tabIndex={-1}>Проверьте, стали ли выбранные задачи занимать меньше времени.</h2>
+        <p>Для рабочего плана выберите в табеле две или три задачи.</p>
       </div>
 
       {pilotPlan.length > 0 ? (
@@ -46,6 +49,9 @@ export function PilotPlan() {
               type="button"
               onClick={() => void copy(planText)}
               data-testid="copy-plan"
+              data-copy-state={status}
+              aria-busy={status === "pending"}
+              aria-disabled={status === "pending"}
             >
               {copyLabel}
             </button>
@@ -53,11 +59,13 @@ export function PilotPlan() {
               Распечатать
             </button>
             <span className="sr-only" role="status" aria-live="polite">
-              {status === "success"
-                ? "План скопирован в буфер обмена."
-                : status === "error"
-                  ? "Не удалось скопировать план. Повторите попытку."
-                  : ""}
+              {status === "pending"
+                ? "Копирую план."
+                : status === "success"
+                  ? "План скопирован в буфер обмена."
+                  : status === "error"
+                    ? "Не удалось скопировать план. Попробуйте ещё раз."
+                    : ""}
             </span>
           </div>
           <ol className="pilot-grid">
@@ -72,12 +80,8 @@ export function PilotPlan() {
         </>
       ) : (
         <div className="pilot-empty" role="status">
-          <strong>
-            {selected.length < 2 ? "Добавьте ещё сценарии" : "Оставьте три главных сценария"}
-          </strong>
-          <p>
-            Сейчас выбрано: {selected.length}. Вернитесь к табелю и соберите фокус на две недели.
-          </p>
+          <strong>{selectionGuidance.title}</strong>
+          <p>{selectionGuidance.detail}</p>
           <a href="#week">Вернуться к выбору ↑</a>
         </div>
       )}

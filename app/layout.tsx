@@ -6,7 +6,7 @@ import "./globals.css";
 
 const title = "Верните себе рабочий день";
 const description =
-  "Пять практических сценариев, которые помогают освободить до восьми часов в неделю с нейросетями — без магии и без потери контроля.";
+  "Пять рабочих сценариев с оценкой до восьми часов в неделю и планом на две недели. ИИ готовит черновик, человек проверяет результат.";
 const isGitHubPages = process.env.DEPLOY_TARGET === "github-pages";
 const basePath = isGitHubPages
   ? (process.env.PAGES_BASE_PATH ?? "/ai-productivity-webinar")

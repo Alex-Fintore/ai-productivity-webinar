@@ -23,30 +23,36 @@ export type PilotDay = {
   detail: string;
 };
 
+export type SelectionGuidance = {
+  summary: string;
+  title: string;
+  detail: string;
+};
+
 export const DATA_CLASSIFICATION_GUIDANCE: Record<DataClass, DataGuidance> = {
   public: {
     label: "Публичные данные",
     verdict: "Можно использовать в разрешённом сервисе",
     recommendation:
-      "Проверяйте факты и источники перед публикацией — публичность данных не делает ответ безошибочным.",
+      "Даже по открытым данным модель может ошибиться. Перед публикацией проверьте факты и источники.",
   },
   internal: {
     label: "Внутренние данные",
-    verdict: "Только в согласованном рабочем контуре",
+    verdict: "Только в сервисе, который разрешила компания",
     recommendation:
-      "Уберите лишние имена и детали, проверьте правила компании и используйте утверждённый корпоративный инструмент.",
+      "Передавайте только то, что нужно для задачи, и только в сервис, который разрешила компания.",
   },
   confidential: {
     label: "Конфиденциальные данные",
     verdict: "Не загружайте в обычный внешний чат",
     recommendation:
-      "Нужны согласованный корпоративный или собственный контур, контроль доступа и подтверждение владельца данных.",
+      "Используйте только систему, которую компания разрешила для таких данных. Нужны контроль доступа и согласие владельца данных.",
   },
   personal: {
     label: "Персональные данные",
-    verdict: "Требуется отдельная правовая и ИБ-проверка",
+    verdict: "Сначала согласуйте с юристом и специалистом по безопасности",
     recommendation:
-      "Не передавайте ФИО, контакты, документы и идентификаторы без понятной цели, основания и разрешённого контура.",
+      "Не передавайте ФИО, контакты, документы и идентификаторы без понятной цели, законного основания и разрешения компании.",
   },
 };
 
@@ -57,6 +63,42 @@ const SCENARIO_LABELS: Record<ScenarioId, string> = {
   documents: "документы",
   tables: "таблицы",
 };
+
+export function getSelectionGuidance(count: number): SelectionGuidance {
+  if (count <= 0) {
+    return {
+      summary: "Выберите 2–3 задачи — из них соберётся план на две недели.",
+      title: "Выберите 2–3 задачи",
+      detail:
+        "Вернитесь к списку и отметьте задачи, которые хотите проверить в первую очередь.",
+    };
+  }
+
+  if (count === 1) {
+    return {
+      summary: "Выберите ещё одну задачу — после этого появится план.",
+      title: "Выберите ещё одну задачу",
+      detail: "После этого появится план на две недели.",
+    };
+  }
+
+  if (count >= 4) {
+    return {
+      summary: "Оставьте 2–3 задачи, чтобы план был выполним за две недели.",
+      title: "Оставьте три главные задачи",
+      detail: "План рассчитан на 2–3 задачи, которые можно проверить за две недели.",
+    };
+  }
+
+  return {
+    summary:
+      count === 2
+        ? "Выбраны две задачи — план на две недели готов."
+        : "Выбраны три задачи — план на две недели готов.",
+    title: "План готов",
+    detail: "Начните с замера исходного времени и сохраните результат для сравнения.",
+  };
+}
 
 function isScenarioId(value: unknown): value is ScenarioId {
   return typeof value === "string" && value in SCENARIO_ESTIMATES;
@@ -90,7 +132,12 @@ export function buildPilotPlan(ids: unknown[]): PilotDay[] {
     throw new RangeError("Для плана выберите два или три разных сценария");
   }
 
-  const scenarioText = scenarios.map((id) => SCENARIO_LABELS[id]).join(", ");
+  const scenarioLabels = scenarios.map((id) => SCENARIO_LABELS[id]);
+  const scenarioText = scenarioLabels.join(", ");
+  const scenarioChoiceText =
+    scenarioLabels.length === 2
+      ? scenarioLabels.join(" или ")
+      : `${scenarioLabels.slice(0, -1).join(", ")} или ${scenarioLabels.at(-1)}`;
   const entries: Omit<PilotDay, "day">[] = [
     {
       phase: "baseline",
@@ -105,7 +152,7 @@ export function buildPilotPlan(ids: unknown[]): PilotDay[] {
     {
       phase: "template",
       title: "Соберите первый шаблон",
-      detail: `Создайте запрос для сценариев: ${scenarioText}. Укажите контекст, ограничения и формат ответа.`,
+      detail: `Сделайте отдельный запрос для каждой выбранной задачи: ${scenarioText}. Укажите контекст, ограничения и формат ответа.`,
     },
     {
       phase: "template",
@@ -130,7 +177,7 @@ export function buildPilotPlan(ids: unknown[]): PilotDay[] {
     {
       phase: "trial",
       title: "Повторите пробу",
-      detail: `Проверьте обновлённый шаблон на новом материале из группы: ${scenarioText}.`,
+      detail: `Возьмите новый пример одной из выбранных задач — ${scenarioChoiceText} — и проверьте обновлённый шаблон.`,
     },
     {
       phase: "trial",
@@ -160,10 +207,9 @@ export function buildPilotPlan(ids: unknown[]): PilotDay[] {
     {
       phase: "comparison",
       title: "Сравните итог",
-      detail: "Сопоставьте время до и после, число серьёзных ошибок и объём ручной правки. Решите, что масштабировать.",
+      detail: "Сравните время до и после, число серьёзных ошибок и объём ручной правки. Решите, какие шаблоны оставить, а какие проверить ещё раз.",
     },
   ];
 
   return entries.map((entry, index) => ({ day: index + 1, ...entry }));
 }
-

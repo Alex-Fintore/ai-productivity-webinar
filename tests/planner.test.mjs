@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
+import * as planner from "../app/lib/planner.ts";
+
+const {
   DATA_CLASSIFICATION_GUIDANCE,
   SCENARIO_ESTIMATES,
   buildPilotPlan,
   calculateSelectedHours,
-} from "../app/lib/planner.ts";
+} = planner;
 
 const ALL_SCENARIO_IDS = [
   "mail",
@@ -76,6 +78,44 @@ test("builds an ordered 14-day pilot from two or three unique scenarios", () => 
   assert.match(dayText.at(-1), /сравн|итог|comparison|final/i);
   assert.match(fullPlanText, /mail|письм/i);
   assert.match(fullPlanText, /research|поиск|анализ/i);
+});
+
+test("describes the next selection step instead of repeating the current count", () => {
+  assert.equal(typeof planner.getSelectionGuidance, "function");
+  if (typeof planner.getSelectionGuidance !== "function") return;
+
+  assert.deepEqual(planner.getSelectionGuidance(0), {
+    summary: "Выберите 2–3 задачи — из них соберётся план на две недели.",
+    title: "Выберите 2–3 задачи",
+    detail: "Вернитесь к списку и отметьте задачи, которые хотите проверить в первую очередь.",
+  });
+  assert.deepEqual(planner.getSelectionGuidance(1), {
+    summary: "Выберите ещё одну задачу — после этого появится план.",
+    title: "Выберите ещё одну задачу",
+    detail: "После этого появится план на две недели.",
+  });
+  assert.deepEqual(planner.getSelectionGuidance(4), {
+    summary: "Оставьте 2–3 задачи, чтобы план был выполним за две недели.",
+    title: "Оставьте три главные задачи",
+    detail: "План рассчитан на 2–3 задачи, которые можно проверить за две недели.",
+  });
+});
+
+test("keeps the pilot instructions direct and specific", () => {
+  const plan = buildPilotPlan(["mail", "research"]);
+
+  assert.equal(
+    plan[2].detail,
+    "Сделайте отдельный запрос для каждой выбранной задачи: письма, поиск и анализ. Укажите контекст, ограничения и формат ответа.",
+  );
+  assert.equal(
+    plan[7].detail,
+    "Возьмите новый пример одной из выбранных задач — письма или поиск и анализ — и проверьте обновлённый шаблон.",
+  );
+  assert.equal(
+    plan.at(-1).detail,
+    "Сравните время до и после, число серьёзных ошибок и объём ручной правки. Решите, какие шаблоны оставить, а какие проверить ещё раз.",
+  );
 });
 
 test("rejects pilot selections outside the two-to-three valid-scenario boundary", () => {

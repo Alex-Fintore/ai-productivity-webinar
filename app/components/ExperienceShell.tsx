@@ -74,6 +74,8 @@ export function useExperience() {
 
 export function ExperienceShell({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLElement>(null);
+  const modeButtonRef = useRef<HTMLButtonElement>(null);
+  const currentSceneRef = useRef(0);
   const skippedFirstPersistence = useRef(false);
   const [selected, setSelected] = useState<ScenarioId[]>([]);
   const [currentScene, setCurrentScene] = useState(0);
@@ -139,7 +141,10 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
         if (!visible) return;
 
         const index = scenes.indexOf(visible.target as HTMLElement);
-        if (index >= 0) setCurrentScene(index);
+        if (index >= 0) {
+          currentSceneRef.current = index;
+          setCurrentScene(index);
+        }
       },
       { threshold: [0.3, 0.55, 0.75] },
     );
@@ -148,21 +153,48 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
-  const setMode = useCallback((next: boolean) => {
-    const url = new URL(window.location.href);
-    if (next) url.searchParams.set("present", "1");
-    else url.searchParams.delete("present");
-    window.history.replaceState({}, "", url);
-    window.dispatchEvent(new Event(PRESENTATION_EVENT));
-  }, []);
+  const setMode = useCallback(
+    (next: boolean) => {
+      const scenes = rootRef.current?.querySelectorAll<HTMLElement>("[data-scene]");
+      const activeScene = scenes?.[currentSceneRef.current];
+      const url = new URL(window.location.href);
+
+      if (next) {
+        url.searchParams.set("present", "1");
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      } else {
+        url.searchParams.delete("present");
+      }
+
+      window.history.replaceState({}, "", url);
+      window.dispatchEvent(new Event(PRESENTATION_EVENT));
+      window.requestAnimationFrame(() => {
+        activeScene?.scrollIntoView({ behavior: "auto", block: "start" });
+        if (next) {
+          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+          const heading = activeScene?.querySelector<HTMLElement>("h1, h2");
+          (heading ?? rootRef.current)?.focus({ preventScroll: true });
+        } else {
+          modeButtonRef.current?.focus({ preventScroll: true });
+        }
+      });
+    },
+    [],
+  );
 
   const goToScene = useCallback((index: number) => {
     const scenes = rootRef.current?.querySelectorAll<HTMLElement>("[data-scene]");
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scenes?.[index]?.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
+    if (!scenes?.length) return;
+
+    const nextIndex = Math.max(0, Math.min(scenes.length - 1, index));
+    const scene = scenes[nextIndex];
+    currentSceneRef.current = nextIndex;
+    setCurrentScene(nextIndex);
+    scene?.scrollIntoView({
+      behavior: "auto",
       block: "start",
     });
+    scene?.querySelector<HTMLElement>("h1, h2")?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => {
@@ -180,9 +212,9 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
 
       let nextScene: number | null = null;
       if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(event.key)) {
-        nextScene = Math.min(SCENE_COUNT - 1, currentScene + 1);
+        nextScene = Math.min(SCENE_COUNT - 1, currentSceneRef.current + 1);
       } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key)) {
-        nextScene = Math.max(0, currentScene - 1);
+        nextScene = Math.max(0, currentSceneRef.current - 1);
       } else if (event.key === "Home") {
         nextScene = 0;
       } else if (event.key === "End") {
@@ -196,15 +228,15 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentScene, goToScene, presentMode, setMode]);
+  }, [goToScene, presentMode, setMode]);
 
   useGSAP(
     () => {
       const media = gsap.matchMedia();
       media.add(
-        "(min-width: 900px) and (prefers-reduced-motion: no-preference)",
+        "(min-width: 1161px) and (prefers-reduced-motion: no-preference)",
         () => {
-          gsap.from(".hero-copy > *", {
+          gsap.from(".hero-copy > :not(.primary-cta)", {
             y: 28,
             opacity: 0,
             duration: 0.8,
@@ -269,11 +301,7 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
 
   return (
     <ExperienceContext.Provider value={contextValue}>
-      <main
-        ref={rootRef}
-        className="site-shell"
-        data-present={presentMode ? "true" : "false"}
-      >
+      <div className="site-shell" data-present={presentMode ? "true" : "false"}>
         <a className="skip-link" href="#week">
           Перейти к конструктору недели
         </a>
@@ -285,7 +313,12 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
           </a>
           <div
             className="header-progress"
-            aria-label={`Сцена ${currentScene + 1} из ${SCENE_COUNT}`}
+            role="progressbar"
+            aria-label="Прогресс по сценам"
+            aria-valuemin={1}
+            aria-valuemax={SCENE_COUNT}
+            aria-valuenow={currentScene + 1}
+            aria-valuetext={`Сцена ${currentScene + 1} из ${SCENE_COUNT}`}
           >
             <span>{String(currentScene + 1).padStart(2, "0")}</span>
             <span className="header-progress-line" aria-hidden="true">
@@ -294,17 +327,27 @@ export function ExperienceShell({ children }: { children: ReactNode }) {
             <span>{String(SCENE_COUNT).padStart(2, "0")}</span>
           </div>
           <button
+            ref={modeButtonRef}
             className="mode-button"
             type="button"
             onClick={() => setMode(!presentMode)}
             aria-pressed={presentMode}
           >
-            {presentMode ? "Обычный режим" : "Режим выступления"}
+            {presentMode
+              ? "Выйти из режима выступления"
+              : "Открыть режим выступления"}
           </button>
+          {presentMode ? (
+            <p className="presentation-hint" role="status">
+              Стрелки или пробел — следующая сцена · Esc — выйти
+            </p>
+          ) : null}
         </header>
 
-        {children}
-      </main>
+        <main ref={rootRef} className="site-content" tabIndex={-1}>
+          {children}
+        </main>
+      </div>
     </ExperienceContext.Provider>
   );
 }

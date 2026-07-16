@@ -10,14 +10,16 @@ export default function Home() {
     <ExperienceShell>
       <section id="top" className="hero-story scene" data-scene data-testid="hero-scene">
         <div className="hero-copy">
-          <p className="eyebrow">5 сценариев · до 8 часов · финал проверяет человек</p>
-          <h1>
+          <p className="eyebrow">
+            5 сценариев · до 8 часов в неделю · результат проверяет человек
+          </p>
+          <h1 tabIndex={-1}>
             Верните себе
             <em>рабочий день</em>
           </h1>
           <p className="hero-lead">
-            Не ещё один обзор нейросетей, а рабочий маршрут: где отдать помощнику черновик, что
-            оставить человеку и как проверить эффект за две недели.
+            Выберите повторяющиеся задачи, поручите ИИ подготовить черновики и за две недели
+            сравните время до и после. Факты, решения и финальная проверка остаются за человеком.
           </p>
           <a className="primary-cta" href="#week">
             Собрать свою неделю <span aria-hidden="true">→</span>
@@ -29,7 +31,7 @@ export default function Home() {
           <div className="artifact-heading">
             <div>
               <p className="artifact-kicker">АРТЕФАКТ 01 / РАБОЧАЯ НЕДЕЛЯ</p>
-              <h2 id="week-grid-title">40 часов → один свободный день</h2>
+              <h2 id="week-grid-title">До восьми часов из сорока — рабочий ориентир</h2>
             </div>
             <p>5 дней × 8 часов</p>
           </div>
@@ -50,6 +52,7 @@ export default function Home() {
                   key={index}
                   className={index >= 32 ? "hour-cell free-hour" : "hour-cell"}
                   data-hour={String(index + 1).padStart(2, "0")}
+                  aria-hidden="true"
                 />
               ))}
             </div>
@@ -80,25 +83,26 @@ export default function Home() {
             </tbody>
           </table>
           <div className="artifact-note reveal-rule">
-            Восемь блоков не исчезают сами — их возвращают повторяемые процессы.
+            Восемь выделенных блоков — верхняя граница оценки для пяти сценариев. Реальный
+            результат зависит от задач, исходных материалов и качества проверки.
           </div>
         </div>
       </section>
 
       <ScenarioLedger />
 
-      <section className="process-section scene" data-scene>
-        <div className="section-heading light-heading">
-          <p className="section-index">02 / НЕ МАГИЯ, А ПРОЦЕСС</p>
-          <h2>Помощник делает черновик. Человек отвечает за результат.</h2>
+      <section id="process" className="process-section scene" data-scene>
+        <div className="section-heading section-heading--wide light-heading">
+          <p className="section-index">02 / КАК УСТРОЕН ПРОЦЕСС</p>
+          <h2 tabIndex={-1}>Помощник делает черновик. Человек отвечает за результат.</h2>
         </div>
         <ol className="process-track">
           {[
             ["01", "Сырой материал", "Письмо, запись встречи, документ или таблица"],
             ["02", "Чёткая задача", "Контекст, ограничения и ожидаемый формат"],
-            ["03", "Черновик ИИ", "Первый вариант, который экономит механику"],
+            ["03", "Черновик ИИ", "Первый вариант вместо работы с пустого листа"],
             ["04", "Проверка человеком", "Факты, числа, сроки, тон и чувствительные данные"],
-            ["05", "Лучший шаблон", "Ошибки возвращаются в процесс и улучшают повтор"],
+            ["05", "Уточнённый шаблон", "Запишите ошибки, поправьте запрос и попробуйте снова"],
           ].map(([index, title, text]) => (
             <li key={index}>
               <span>{index}</span>
@@ -107,24 +111,25 @@ export default function Home() {
             </li>
           ))}
         </ol>
-        <p className="process-quote">
-          «Нейросеть ускоряет черновую работу, но не заменяет ответственность за результат».
-        </p>
       </section>
 
       <SafetyTools />
       <PromptBuilder />
       <PilotPlan />
 
-      <section className="atlas-section scene" data-scene>
-        <div className="section-heading">
+      <section id="atlas" className="atlas-section scene" data-scene>
+        <div className="section-heading section-heading--wide">
           <p className="section-index">07 / АТЛАС</p>
-          <h2>Теория и ограничения — рядом, но не на пути к первому результату.</h2>
+          <h2 tabIndex={-1}>
+            История, типы моделей, правовой минимум и источники — в разделах ниже.
+          </h2>
         </div>
         <div className="atlas-details">
           <details>
             <summary>
-              <span>01</span> Как мы пришли к рабочим помощникам
+              <span>01</span>
+              <span>Как мы пришли к рабочим помощникам</span>
+              <span className="atlas-marker" aria-hidden="true">+</span>
             </summary>
             <ol className="history-list">
               {HISTORY.map(([year, text]) => (
@@ -137,7 +142,9 @@ export default function Home() {
           </details>
           <details>
             <summary>
-              <span>02</span> Какие типы нейросетей существуют
+              <span>02</span>
+              <span>Какие типы нейросетей существуют</span>
+              <span className="atlas-marker" aria-hidden="true">+</span>
             </summary>
             <dl className="architecture-list">
               {ARCHITECTURES.map(([name, text]) => (
@@ -150,7 +157,9 @@ export default function Home() {
           </details>
           <details>
             <summary>
-              <span>03</span> Правовой минимум для России
+              <span>03</span>
+              <span>Правовой минимум для России</span>
+              <span className="atlas-marker" aria-hidden="true">+</span>
             </summary>
             <div className="legal-copy">
               <p>
@@ -159,9 +168,10 @@ export default function Home() {
                 отдельной проверки локализации и трансграничной передачи.
               </p>
               <p>
-                Нейросеть нельзя называть автором: российский ГК связывает авторство с творческим
-                вкладом человека. Статус конкретного результата зависит от вклада, исходных
-                материалов, договора и прав третьих лиц.
+                ГК РФ признаёт автором гражданина, творческим трудом которого создан результат
+                интеллектуальной деятельности. Поэтому нейросеть нельзя автоматически считать
+                автором. Статус конкретного результата зависит от творческого вклада человека,
+                исходных материалов, договора и прав третьих лиц.
               </p>
               <p>
                 Коммерческая тайна возникает не автоматически, а после введения компанией
@@ -188,7 +198,9 @@ export default function Home() {
           </details>
           <details>
             <summary>
-              <span>04</span> Проверяемые первоисточники
+              <span>04</span>
+              <span>Проверяемые первоисточники</span>
+              <span className="atlas-marker" aria-hidden="true">+</span>
             </summary>
             <div className="source-list">
               {SOURCES.map((source) => (
