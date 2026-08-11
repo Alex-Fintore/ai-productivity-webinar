@@ -22,6 +22,12 @@ PAGES_BASE_PATH=/ai-productivity-webinar npm run build:pages
 - `npm run build` создаёт Sites/vinext-артефакт в `dist/`.
 - `npm run build:pages` создаёт статический Next.js export в `out/` с `basePath` для GitHub Pages.
 
+## Материалы вебинара
+
+- [Памятка участника](artifacts/participant-kit/neiroseti-prostym-yazykom-starter-guide.pdf)
+- [Единый комплект для выдачи](artifacts/participant-kit/neiroseti-prostym-yazykom-materialy-uchastnika.zip)
+- [Состав и порядок проверки](program/materials/participant-delivery-manifest.md)
+
 ## Приватность
 
 Сайт не использует backend, аналитику, формы, аккаунты или внешние API. В `localStorage` под версионным ключом сохраняются только идентификаторы выбранных сценариев; выбор можно сбросить на странице.
